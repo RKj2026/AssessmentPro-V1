@@ -618,7 +618,7 @@ select.form-control{appearance:none;background-image:url("data:image/svg+xml,%3C
         <div>
           <div class="font-semibold" style="font-size:.9rem">Enable Firebase Firestore</div>
           <div class="text-xs text-muted mt-1">
-            Go to <a href="https://console.firebase.google.com" target="_blank" style="color:var(--primary);font-weight:600">console.firebase.google.com</a> → <strong>admission-test-v2</strong> → Firestore Database → <strong>Rules</strong> → Replace with:<br>
+            Go to <a href="https://console.firebase.google.com" target="_blank" style="color:var(--primary);font-weight:600">console.firebase.google.com</a> → <strong>assessmentpro-v1</strong> → Firestore Database → <strong>Rules</strong> → Replace with:<br>
             <code style="display:block;background:var(--neutral-100);padding:8px;border-radius:6px;margin-top:6px;font-size:.78rem">allow read, write: if true;</code>
             → Publish. (Switch to auth-based rules later for production.)
           </div>
@@ -635,7 +635,7 @@ select.form-control{appearance:none;background-image:url("data:image/svg+xml,%3C
 
       <div class="alert alert-success mt-2">
         <span>✅</span>
-        <div><strong>Your Firebase project is already configured</strong> in the app — <code>admission-test-v2</code>. Once hosted on GitHub Pages, just click Connect and it will work immediately.</div>
+        <div><strong>Your Firebase project is already configured</strong> in the app — <code>assessmentpro-v1</code>. Once hosted on GitHub Pages, just click Connect and it will work immediately.</div>
       </div>
     </div>
     <div class="modal-footer" style="justify-content:space-between">
@@ -660,7 +660,7 @@ select.form-control{appearance:none;background-image:url("data:image/svg+xml,%3C
     <div class="modal-body">
       <div class="alert alert-success mb-3">
         <span>🔥</span>
-        <div><strong>Project pre-configured!</strong> Your Firebase project <strong>admission-test-v2</strong> is already set up below. Just click <strong>Connect Firebase</strong> — no copy-paste needed.<br>
+        <div><strong>Project pre-configured!</strong> Your Firebase project <strong>assessmentpro-v1</strong> is already set up below. Just click <strong>Connect Firebase</strong> — no copy-paste needed.<br>
         <span style="font-size:.8rem;opacity:.8">Make sure Firestore is in <strong>test mode</strong> (allow read, write: if true) in the Firebase console.</span></div>
       </div>
       <div class="config-step">
@@ -686,7 +686,7 @@ select.form-control{appearance:none;background-image:url("data:image/svg+xml,%3C
       </div>
       <div class="flex flex-col gap-2 mt-2">
         <div class="alert alert-success" style="font-size:.82rem">
-          <span>✅</span><span>Project <strong>admission-test-v2</strong> is pre-configured. Just click <strong>Connect Firebase</strong> below — no setup needed!</span>
+          <span>✅</span><span>Project <strong>assessmentpro-v1</strong> is pre-configured. Just click <strong>Connect Firebase</strong> below — no setup needed!</span>
         </div>
         <div class="form-group">
           <label class="form-label">API Key *</label>
@@ -903,7 +903,8 @@ select.form-control{appearance:none;background-image:url("data:image/svg+xml,%3C
     </div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeModal('modal-test')">Cancel</button>
-      <button class="btn btn-primary" onclick="saveTest()">Save Test</button>
+      <button class="btn btn-ghost" onclick="saveTest(true)">Save & Continue</button>
+      <button class="btn btn-primary" onclick="saveTest(false)">Save Test</button>
     </div>
   </div>
 </div>
@@ -3196,6 +3197,7 @@ function openTestModal(id=null) {
   // reset picker filters
   ['t-q-search','t-q-filter-tag'].forEach(id=>{const el=document.getElementById(id); if(el) el.value='';});
   const ss=document.getElementById('t-q-filter-section'); if(ss){ ss.innerHTML='<option value="">All sections</option>'; }
+  _pickerInitSel(t);
   renderTestQuestionPicker((t && t.questions) || []);
   openModal('modal-test');
 }
@@ -3222,17 +3224,66 @@ function _refreshTestSectionFilter(){
     sects.map(s=>`<option value="${s}"${cur===s?' selected':''}>${s}</option>`).join('');
 }
 
-function _testPickerSelected(){ return new Set(Array.from(document.querySelectorAll('#t-q-picker .t-q-cb:checked')).map(cb=>cb.value)); }
+// V2 fix: persistent picker selection map { qid -> sectionName }.
+// Selections persist across search/section/tag filter changes, and the
+// section a question gets mapped to follows the active section filter.
+function _pickerInitSel(test){
+  App._pickerSel = {};
+  if(test && Array.isArray(test.questions)){
+    test.questions.forEach(qid=>{
+      var q = Store.questions.find(x=>x.id===qid);
+      App._pickerSel[qid] = (q && q.section) || '';
+    });
+  }
+}
+function _pickerCurrentSectionFilter(){
+  var el = document.getElementById('t-q-filter-section');
+  return el ? (el.value||'') : '';
+}
+function _pickerFirstSection(){
+  var s = _getTestEditorSections();
+  return s[0] || '';
+}
+function _pickerToggle(qid, checked){
+  if(!App._pickerSel) App._pickerSel = {};
+  if(checked){
+    var sec = _pickerCurrentSectionFilter();
+    if(!sec){
+      // No active filter: keep the question's existing section if it
+      // still matches one of this test's sections, otherwise default to first.
+      var existing = App._pickerSel[qid];
+      if(!existing){
+        var q = Store.questions.find(x=>x.id===qid);
+        existing = (q && q.section) || '';
+      }
+      var sects = _getTestEditorSections();
+      sec = (existing && sects.indexOf(existing)>=0) ? existing : (sects[0]||'');
+    }
+    App._pickerSel[qid] = sec;
+  } else {
+    delete App._pickerSel[qid];
+  }
+  _updateTestQCount();
+}
+function _testPickerSelectedIds(){ return Object.keys(App._pickerSel||{}); }
 function renderTestQuestionPicker(preSelected){
   const wrap = document.getElementById('t-q-picker'); if(!wrap) return;
+  if(preSelected){
+    // initial render from a test record
+    App._pickerSel = App._pickerSel || {};
+    preSelected.forEach(qid=>{
+      if(App._pickerSel[qid] === undefined){
+        var q = Store.questions.find(x=>x.id===qid);
+        App._pickerSel[qid] = (q && q.section) || '';
+      }
+    });
+  }
+  if(!App._pickerSel) App._pickerSel = {};
   const search = (document.getElementById('t-q-search').value||'').toLowerCase();
   const sec = document.getElementById('t-q-filter-section').value;
   const tag = (document.getElementById('t-q-filter-tag').value||'').toLowerCase().trim();
-  const selected = preSelected ? new Set(preSelected) : _testPickerSelected();
-  // populate section dropdown from THIS test's defined sections
   _refreshTestSectionFilter();
   const list = Store.questions.filter(q=>{
-    // Only show questions assigned to THIS test, or unassigned (no testId)
     const assigned = q.testId || '';
     if(App.editingTestId){
       if(assigned && assigned !== App.editingTestId) return false;
@@ -3242,27 +3293,36 @@ function renderTestQuestionPicker(preSelected){
     if(tag && !((q.tags||[]).some(t=>(t||'').toLowerCase().includes(tag)))) return false;
     return true;
   });
-  wrap.innerHTML = list.length ? list.map(q=>`
+  wrap.innerHTML = list.length ? list.map(q=>{
+    var checked = (App._pickerSel[q.id] !== undefined);
+    var mappedTo = App._pickerSel[q.id] || '';
+    return `
     <label style="display:flex;gap:8px;padding:6px 4px;border-bottom:1px solid var(--neutral-200);cursor:pointer;font-size:.82rem">
-      <input type="checkbox" class="t-q-cb" value="${q.id}" ${selected.has(q.id)?'checked':''} onchange="_updateTestQCount()">
+      <input type="checkbox" class="t-q-cb" value="${q.id}" ${checked?'checked':''} onchange="_pickerToggle('${q.id}', this.checked)">
       <span style="flex:1">
         <span class="badge badge-primary" style="font-size:.65rem">${q.section||'—'}</span>
+        ${mappedTo?`<span class="badge badge-success" style="font-size:.65rem;margin-left:4px" title="Mapped to this test section">→ ${mappedTo}</span>`:''}
         <span style="margin-left:6px">${(q.text||'').slice(0,140)}</span>
         ${(q.tags&&q.tags.length)?`<span class="text-muted" style="font-size:.7rem">  · ${q.tags.join(', ')}</span>`:''}
       </span>
-    </label>`).join('') : '<div class="text-muted text-sm p-2">No questions match. Add questions in the Question Bank first.</div>';
+    </label>`;}).join('') : '<div class="text-muted text-sm p-2">No questions match. Add questions in the Question Bank first.</div>';
   _updateTestQCount();
 }
 function _updateTestQCount(){
   const el=document.getElementById('t-qcount');
-  if(el) el.textContent = document.querySelectorAll('#t-q-picker .t-q-cb:checked').length;
+  if(el) el.textContent = _testPickerSelectedIds().length;
 }
 function testQpickAll(state){
-  document.querySelectorAll('#t-q-picker .t-q-cb').forEach(cb=>cb.checked=!!state);
+  document.querySelectorAll('#t-q-picker .t-q-cb').forEach(cb=>{
+    if(cb.checked !== !!state){
+      cb.checked = !!state;
+      _pickerToggle(cb.value, !!state);
+    }
+  });
   _updateTestQCount();
 }
 
-function saveTest() {
+function saveTest(keepOpen) {
   const name = document.getElementById('t-name').value.trim();
   if(!name) { toast('Test name is required.','danger'); return; }
   const sections = [];
@@ -3273,11 +3333,25 @@ function saveTest() {
   });
   if(!sections.length) { toast('Add at least one section.','danger'); return; }
 
-  // Use mapped question IDs from picker
-  const qIds = Array.from(document.querySelectorAll('#t-q-picker .t-q-cb:checked')).map(cb=>cb.value);
+  // V2 fix: read from persistent picker selection (survives filter changes)
+  const selMap = App._pickerSel || {};
+  const qIds = Object.keys(selMap);
   if(!qIds.length){ toast('Select at least one question for this test.','danger'); return; }
+  // Persist each question's section assignment as set in the picker
+  const _validSecNames = sections.map(s=>s.name);
+  qIds.forEach(qid=>{
+    const q = Store.questions.find(x=>x.id===qid);
+    if(!q) return;
+    let target = selMap[qid];
+    if(!target || _validSecNames.indexOf(target)<0) target = _validSecNames[0];
+    if(q.section !== target){
+      q.section = target;
+      if(typeof FB!=='undefined' && FB.cfg && FB.syncQuestion) FB.syncQuestion(q);
+    }
+  });
 
-  const test = {
+  const previousTest = App.editingTestId ? (Store.tests.find(x=>x.id===App.editingTestId) || {}) : {};
+  const test = Object.assign({}, previousTest, {
     id: App.editingTestId || `T${Date.now()}`,
     name, duration:+document.getElementById('t-duration').value,
     totalMarks:+document.getElementById('t-total-marks').value,
@@ -3290,8 +3364,9 @@ function saveTest() {
     negativeMarking:document.getElementById('t-negative').checked,
     showResult:document.getElementById('t-show-result').checked,
     sectionalTiming:document.getElementById('t-sectional-timing').checked,
-    status:'active',
-  };
+    status:previousTest.status || 'active',
+    linkDisabled:!!previousTest.linkDisabled,
+  });
   if(App.editingTestId) {
     const idx = Store.tests.findIndex(x=>x.id===App.editingTestId);
     if(idx>=0) Store.tests[idx] = test;
@@ -3301,7 +3376,9 @@ function saveTest() {
     toast('Test created!','success');
   }
   _normalizeQuestionSections(test);
-  Store.save(); if(FB.cfg) FB.syncTest(test); closeModal('modal-test'); renderTests();
+  Store.save(); if(FB.cfg) FB.syncTest(test); renderTests();
+  if(keepOpen){ App.editingTestId = test.id; toast('Saved. Continue editing.','success'); renderTestQuestionPicker(); }
+  else closeModal('modal-test');
 }
 function editTest(id) { openTestModal(id); }
 function toggleTestStatus(id) {
@@ -3891,7 +3968,7 @@ function _firstIndexInSection(qs, sections, sectionIdx){
   const name = sections && sections[sectionIdx] && sections[sectionIdx].name;
   if(!name) return 0;
   const i = qs.findIndex(q=>q.section===name);
-  return i>=0 ? i : 0;
+  return i>=0 ? i : -1;
 }
 
 function startTest() {
@@ -3919,7 +3996,7 @@ function startTest() {
   const _startIdx = _firstIndexInSection(qs, test.sections||[], 0);
   App.testState = restored ? Object.assign({}, restored.state, {questions:qs, timer:null}) : {
     questions: qs, currentIndex: _startIdx, answers: {}, flags: {},
-    visited: {[_startIdx]:true}, timer: null, timeLeft: test.duration*60,
+    visited: _startIdx>=0 ? {[_startIdx]:true} : {}, timer: null, timeLeft: test.duration*60,
     currentSection: 0, tabSwitches: 0, startTime: Date.now(),
     sectionIdx: 0,
   };
@@ -3975,23 +4052,23 @@ function switchTestSection(idx, el) {
   const secName = App.currentTest.sections[idx]?.name;
   const firstIdx = App.testState.questions.findIndex(q=>q.section===secName);
   if(firstIdx>=0) { App.testState.currentIndex = firstIdx; App.testState.visited[firstIdx]=true; }
-  else {
-    document.getElementById('question-container').innerHTML =
-      '<div class="card"><div class="card-body text-center text-muted">No questions are mapped to the <strong>'+secName+'</strong> section.</div></div>';
-  }
+  else { App.testState.currentIndex = -1; }
   renderQuestion(); renderQNavGrid();
 }
 
 function renderQuestion() {
   const ts = App.testState;
   const q = ts.questions[ts.currentIndex];
-  if(!q){
+  const secName = App.currentTest && App.currentTest.sections[ts.sectionIdx]?.name || '';
+  if(!q || (secName && q.section !== secName)){
     const secName = App.currentTest && App.currentTest.sections[ts.sectionIdx]?.name || '';
     const c = document.getElementById('question-container');
-    if(c) c.innerHTML = '<div class="card"><div class="card-body text-center text-muted">No questions in '+(secName||'this section')+'.</div></div>';
+    if(c) c.innerHTML = '<div class="card"><div class="card-body text-center text-muted">No questions are mapped to '+(secName?'<strong>'+secName+'</strong>':'this section')+'.</div></div>';
+    const btnPrev = document.getElementById('btn-prev'); if(btnPrev) btnPrev.disabled = true;
+    const btnNext = document.getElementById('btn-next'); if(btnNext){ btnNext.textContent = 'Next →'; btnNext.onclick = function(){}; btnNext.disabled = true; }
+    updateProgress();
     return;
   }
-  const secName = App.currentTest.sections[ts.sectionIdx]?.name || '';
   document.getElementById('test-section-label').textContent = q.section;
 
   const letters = ['A','B','C','D','E','F'];
@@ -4037,6 +4114,7 @@ function renderQuestion() {
   document.getElementById('btn-prev').disabled = ts.currentIndex === 0;
   const isLast = ts.currentIndex === ts.questions.length-1;
   const btnNext = document.getElementById('btn-next');
+  btnNext.disabled = false;
   btnNext.textContent = isLast ? 'Finish →' : 'Next →';
   btnNext.onclick = isLast ? (()=>showSubmitModal()) : (()=>navigateQuestion(1));
   updateProgress();
@@ -4104,7 +4182,7 @@ function updateProgress() {
   const total = ts.questions.length;
   const flagged = Object.keys(ts.flags).filter(k=>ts.flags[k]).length;
   document.getElementById('progress-answered').textContent = `${answered}/${total}`;
-  document.getElementById('progress-bar').style.width = `${answered/total*100}%`;
+  document.getElementById('progress-bar').style.width = `${total ? answered/total*100 : 0}%`;
   document.getElementById('progress-flagged').textContent = `Flagged: ${flagged}`;
   document.getElementById('progress-unanswered').textContent = `Unanswered: ${total-answered}`;
 }
@@ -4805,9 +4883,14 @@ async function connectFirebase() {
 }
 function disconnectFirebase() { FB.disconnect(); closeModal('modal-firebase'); }
 
+function _preferredFirebaseConfig(saved) {
+  return (saved && saved.projectId === DEFAULT_CONFIG.projectId) ? saved : DEFAULT_CONFIG;
+}
+
 function openFirebaseModal() {
   var saved = {};
   try { saved = JSON.parse(localStorage.getItem('admitpro_fb_config') || '{}'); } catch(e){}
+  saved = _preferredFirebaseConfig(saved);
   var set = function(id, val){ var el=document.getElementById(id); if(el) el.value=val||''; };
   set('fb-apiKey',     saved.apiKey    || DEFAULT_CONFIG.apiKey);
   set('fb-projectId',  saved.projectId || DEFAULT_CONFIG.projectId);
@@ -4831,7 +4914,7 @@ async function tryAutoConnect() {
   // Always try to auto-connect using saved or default config — silent on failure.
   var saved = null;
   try { saved = JSON.parse(localStorage.getItem('admitpro_fb_config')); } catch(e){}
-  var cfg = (saved && saved.projectId) ? saved : DEFAULT_CONFIG;
+  var cfg = _preferredFirebaseConfig(saved);
   if(_isLocalFile()) {
     // file:// can't reach Firebase — show banner only if there's local data to sync
     var hasData = Store.questions.length > 0 || Store.candidates.length > 0;
@@ -5007,13 +5090,30 @@ function toggleTestLink(testId){
 }
 
 
-function init() {
+async function init() {
   Store._init();
   applyBranding();
   _setupDragDropZones();
-  tryAutoConnect();
-  // V2: route public test links → candidate form, otherwise default landing
-  if(!_routePublicLink()) showScreen('screen-landing');
+  // V2 fix: if this is a public test link, wait for Firebase sync so the
+  // test record is loaded on devices that don't have local data yet.
+  var hasLink = !!_getLinkTestId();
+  if(hasLink){
+    var loading = document.getElementById('screen-landing');
+    // Show a lightweight "Loading…" hint immediately
+    try { document.body.insertAdjacentHTML('beforeend',
+      '<div id="_link_loading" style="position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#fff;z-index:99999;font:600 16px system-ui,sans-serif;color:#334155">Loading test…</div>'); } catch(e){}
+    try { await tryAutoConnect(); } catch(e){}
+    // Retry once if test still not present (Firebase may have been seeding)
+    var tid = _getLinkTestId();
+    if(tid && !Store.tests.find(function(x){return x.id===tid;})){
+      try { if(typeof FB!=='undefined' && FB.cfg && FB.pullAll) await FB.pullAll(); } catch(e){}
+    }
+    var el = document.getElementById('_link_loading'); if(el) el.remove();
+    if(!_routePublicLink()) showScreen('screen-landing');
+  } else {
+    tryAutoConnect();
+    showScreen('screen-landing');
+  }
 }
 
 
