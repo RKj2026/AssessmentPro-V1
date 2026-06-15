@@ -30,7 +30,7 @@
   --shadow-lg: 0 12px 40px rgba(11,31,58,.14);
   --radius: 12px;
   --radius-lg: 16px;
-  --institute-name: "AdmitPro Institute";
+  --institute-name: "AssessmentPro Institute";
   --logo-text: "AP";
   transition: all 0.2s;
 }
@@ -1097,7 +1097,7 @@ select.form-control{appearance:none;background-image:url("data:image/svg+xml,%3C
           <span id="login-logo-text" style="font-family:'DM Serif Display',serif;font-size:1.8rem;color:var(--primary)">AP</span>
           <img id="login-logo-img" src="" alt="Logo" style="display:none;width:100%;height:100%;object-fit:contain;border-radius:18px;position:absolute;inset:0">
         </div>
-        <div class="landing-title" id="login-institute-name">AdmitPro Institute</div>
+        <div class="landing-title" id="login-institute-name">AssessmentPro Institute</div>
         <div class="landing-sub">Online Admission Test Portal</div>
       </div>
       <div class="landing-body">
@@ -1186,7 +1186,7 @@ select.form-control{appearance:none;background-image:url("data:image/svg+xml,%3C
           <img id="admin-logo-img" src="" alt="" style="display:none;position:absolute;inset:0;width:100%;height:100%;object-fit:contain;border-radius:8px">
         </div>
       <div>
-        <div class="logo-text" id="admin-institute-name">AdmitPro Institute</div>
+        <div class="logo-text" id="admin-institute-name">AssessmentPro Institute</div>
         <div class="logo-sub">Admin Dashboard</div>
       </div>
     </div>
@@ -1524,7 +1524,7 @@ select.form-control{appearance:none;background-image:url("data:image/svg+xml,%3C
               </div>
               <div class="form-group">
                 <label class="form-label">Institute Name</label>
-                <input type="text" class="form-control" id="setting-name" value="AdmitPro Institute">
+                <input type="text" class="form-control" id="setting-name" value="AssessmentPro Institute">
               </div>
               <div class="form-group">
                 <label class="form-label">Logo Abbreviation <span class="text-muted">(shown when no logo)</span></label>
@@ -1674,7 +1674,7 @@ select.form-control{appearance:none;background-image:url("data:image/svg+xml,%3C
   <div class="topbar">
     <div class="topbar-logo">
       <div class="logo-badge" id="instr-logo">AP</div>
-      <div><div class="logo-text" id="instr-institute">AdmitPro Institute</div><div class="logo-sub">Examination Portal</div></div>
+      <div><div class="logo-text" id="instr-institute">AssessmentPro Institute</div><div class="logo-sub">Examination Portal</div></div>
     </div>
     <button class="btn btn-ghost btn-sm" style="color:rgba(255,255,255,.75)" onclick="showScreen('screen-landing')">⬅ Logout</button>
   </div>
@@ -1816,7 +1816,7 @@ select.form-control{appearance:none;background-image:url("data:image/svg+xml,%3C
 // ═══════════════════════════════════════════════════════════════
 const Store = {
   settings: {
-    instituteName: 'AdmitPro Institute', logoText: 'AP', tagline: 'Online Admission Test Portal',
+    instituteName: 'AssessmentPro Institute', logoText: 'AP', tagline: 'Online Admission Test Portal',
     theme: '', tabSwitch: true, rightClick: true, copyBlock: false, fullscreen: false,
     maxTabSwitches: 3, showCalc: false, allowReview: true, defMarks: 4, defNeg: 0,
     resultsVisible: true,
@@ -1833,14 +1833,14 @@ const Store = {
   candidates: [],
   results: [],
   _init() {
-    const saved = localStorage.getItem('admitpro_data');
+    const saved = localStorage.getItem('AssessmentPro_data');
     if(saved) { try { Object.assign(this, JSON.parse(saved)); } catch(e) {} }
     else { this._seed(); }
     // Always ensure at least one demo candidate exists for login testing
     // (called after load so it also runs after Firebase sync)
   },
   save() {
-    try { localStorage.setItem('admitpro_data', JSON.stringify({
+    try { localStorage.setItem('AssessmentPro_data', JSON.stringify({
       settings:this.settings, questions:this.questions, tests:this.tests,
       candidates:this.candidates, results:this.results
     })); } catch(e) {}
@@ -2002,7 +2002,7 @@ async function _verifyPwd(plain, stored){
 }
 // Lockout: 5 failed attempts → 15 min cooldown, per identifier (admin email or candidate roll)
 const _LOCK_MAX = 5, _LOCK_MS = 15*60*1000;
-function _lockKey(id){ return 'admitpro_lock_' + (id||'').toLowerCase(); }
+function _lockKey(id){ return 'AssessmentPro_lock_' + (id||'').toLowerCase(); }
 function _checkLock(id){
   try{
     const raw = localStorage.getItem(_lockKey(id)); if(!raw) return null;
@@ -2025,14 +2025,14 @@ function _clearFails(id){ try{ localStorage.removeItem(_lockKey(id)); }catch(e){
 // Audit log
 function auditLog(actor, action, meta){
   try{
-    const k = 'admitpro_audit';
+    const k = 'AssessmentPro_audit';
     const arr = JSON.parse(localStorage.getItem(k)||'[]');
     arr.push({ts:new Date().toISOString(), actor, action, meta:meta||{}});
     if(arr.length>500) arr.splice(0, arr.length-500);
     localStorage.setItem(k, JSON.stringify(arr));
   }catch(e){}
 }
-function getAuditLog(){ try{ return JSON.parse(localStorage.getItem('admitpro_audit')||'[]'); }catch(e){return [];} }
+function getAuditLog(){ try{ return JSON.parse(localStorage.getItem('AssessmentPro_audit')||'[]'); }catch(e){return [];} }
 function downloadAuditLog(){
   const arr = getAuditLog();
   if(!arr.length){ toast('Audit log is empty.','info'); return; }
@@ -2048,10 +2048,10 @@ function _newSessionToken(){
   const a = new Uint8Array(16); crypto.getRandomValues(a);
   return Array.from(a).map(b=>b.toString(16).padStart(2,'0')).join('');
 }
-function _localSessionKey(cid){ return 'admitpro_sess_'+cid; }
+function _localSessionKey(cid){ return 'AssessmentPro_sess_'+cid; }
 function _hasSavedCloudConfig(){
   try {
-    const raw = localStorage.getItem('admitpro_fb_config');
+    const raw = localStorage.getItem('AssessmentPro_fb_config');
     if(!raw) return false;
     const cfg = JSON.parse(raw);
     return !!(cfg && cfg.projectId && cfg.apiKey);
@@ -3986,7 +3986,7 @@ function startTest() {
   // Restore in-progress state if same user/test was interrupted
   let restored = null;
   try {
-    const raw = localStorage.getItem('admitpro_test_progress');
+    const raw = localStorage.getItem('AssessmentPro_test_progress');
     if(raw) {
       const p = JSON.parse(raw);
       if(p && p.testId===test.id && p.candidateId===(App.currentUser&&App.currentUser.id)) restored = p;
@@ -4024,14 +4024,14 @@ function saveTestProgress(){
   try {
     if(!App.testState || !App.currentTest) return;
     const {questions, timer, ...rest} = App.testState; // strip non-serialisable
-    localStorage.setItem('admitpro_test_progress', JSON.stringify({
+    localStorage.setItem('AssessmentPro_test_progress', JSON.stringify({
       testId: App.currentTest.id,
       candidateId: App.currentUser && App.currentUser.id,
       state: rest, savedAt: Date.now()
     }));
   } catch(e){}
 }
-function clearTestProgress(){ try { localStorage.removeItem('admitpro_test_progress'); } catch(e){} }
+function clearTestProgress(){ try { localStorage.removeItem('AssessmentPro_test_progress'); } catch(e){} }
 
 function renderTestScreen() {
   const test = App.currentTest;
@@ -4549,7 +4549,7 @@ const FB = {
         throw new Error('Invalid API key. Check your Firebase API key.');
       }
 
-      localStorage.setItem('admitpro_fb_config', JSON.stringify(config));
+      localStorage.setItem('AssessmentPro_fb_config', JSON.stringify(config));
       this._setStatus('connected', 'Connected · ' + config.projectId);
       this._updateSettingsUI(true, config.projectId);
       await this.pullAll();
@@ -4575,14 +4575,14 @@ const FB = {
   disconnect() {
     this._stopPolling();
     this.cfg = null;
-    localStorage.removeItem('admitpro_fb_config');
+    localStorage.removeItem('AssessmentPro_fb_config');
     this._setStatus('off', 'Firebase disconnected — local mode');
     this._updateSettingsUI(false);
     toast('Firebase disconnected. Running in local mode.', 'info');
   },
 
   // ── CRUD via REST (with offline outbox) ───────────────────
-  _outboxKey: 'admitpro_fb_outbox',
+  _outboxKey: 'AssessmentPro_fb_outbox',
   _readOutbox(){ try { return JSON.parse(localStorage.getItem(this._outboxKey)||'[]'); } catch(e){ return []; } },
   _writeOutbox(arr){ try { localStorage.setItem(this._outboxKey, JSON.stringify(arr)); } catch(e){} },
   _enqueue(op){
@@ -4673,13 +4673,13 @@ const FB = {
       var fbSettings   = results[4];
 
       var fbIsEmpty = fbQuestions.length === 0 && fbTests.length === 0 && fbCandidates.length === 0;
-      var alreadySeeded = localStorage.getItem('admitpro_fb_seeded_' + this.cfg.projectId);
+      var alreadySeeded = localStorage.getItem('AssessmentPro_fb_seeded_' + this.cfg.projectId);
 
       if(fbIsEmpty && !alreadySeeded) {
         // ── FIRST RUN: Firebase is empty — auto-push all local data ──
         this._setStatus('syncing', 'First run — uploading data to Firebase…');
         await this.pushLocalData(true); // true = silent (no toast)
-        localStorage.setItem('admitpro_fb_seeded_' + this.cfg.projectId, '1');
+        localStorage.setItem('AssessmentPro_fb_seeded_' + this.cfg.projectId, '1');
         this._setStatus('connected', 'Auto-seeded · ' + this.cfg.projectId);
         toast('✅ Connected! All data auto-uploaded to Firebase.', 'success', 4000);
       } else {
@@ -4889,7 +4889,7 @@ function _preferredFirebaseConfig(saved) {
 
 function openFirebaseModal() {
   var saved = {};
-  try { saved = JSON.parse(localStorage.getItem('admitpro_fb_config') || '{}'); } catch(e){}
+  try { saved = JSON.parse(localStorage.getItem('AssessmentPro_fb_config') || '{}'); } catch(e){}
   saved = _preferredFirebaseConfig(saved);
   var set = function(id, val){ var el=document.getElementById(id); if(el) el.value=val||''; };
   set('fb-apiKey',     saved.apiKey    || DEFAULT_CONFIG.apiKey);
@@ -4913,7 +4913,7 @@ function _isLocalFile() {
 async function tryAutoConnect() {
   // Always try to auto-connect using saved or default config — silent on failure.
   var saved = null;
-  try { saved = JSON.parse(localStorage.getItem('admitpro_fb_config')); } catch(e){}
+  try { saved = JSON.parse(localStorage.getItem('AssessmentPro_fb_config')); } catch(e){}
   var cfg = _preferredFirebaseConfig(saved);
   if(_isLocalFile()) {
     // file:// can't reach Firebase — show banner only if there's local data to sync
