@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AssessmentPro — Admission Test Platform</title>
+<title>AdmitPro — Admission Test Platform</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
 <!-- Firebase via REST API — no SDK needed -->
 <style>
@@ -30,7 +30,7 @@
   --shadow-lg: 0 12px 40px rgba(11,31,58,.14);
   --radius: 12px;
   --radius-lg: 16px;
-  --institute-name: "AssessmentPro Institute";
+  --institute-name: "AdmitPro Institute";
   --logo-text: "AP";
   transition: all 0.2s;
 }
@@ -1097,7 +1097,7 @@ select.form-control{appearance:none;background-image:url("data:image/svg+xml,%3C
           <span id="login-logo-text" style="font-family:'DM Serif Display',serif;font-size:1.8rem;color:var(--primary)">AP</span>
           <img id="login-logo-img" src="" alt="Logo" style="display:none;width:100%;height:100%;object-fit:contain;border-radius:18px;position:absolute;inset:0">
         </div>
-        <div class="landing-title" id="login-institute-name">AssessmentPro Institute</div>
+        <div class="landing-title" id="login-institute-name">AdmitPro Institute</div>
         <div class="landing-sub">Online Admission Test Portal</div>
       </div>
       <div class="landing-body">
@@ -1186,7 +1186,7 @@ select.form-control{appearance:none;background-image:url("data:image/svg+xml,%3C
           <img id="admin-logo-img" src="" alt="" style="display:none;position:absolute;inset:0;width:100%;height:100%;object-fit:contain;border-radius:8px">
         </div>
       <div>
-        <div class="logo-text" id="admin-institute-name">AssessmentPro Institute</div>
+        <div class="logo-text" id="admin-institute-name">AdmitPro Institute</div>
         <div class="logo-sub">Admin Dashboard</div>
       </div>
     </div>
@@ -1524,7 +1524,7 @@ select.form-control{appearance:none;background-image:url("data:image/svg+xml,%3C
               </div>
               <div class="form-group">
                 <label class="form-label">Institute Name</label>
-                <input type="text" class="form-control" id="setting-name" value="AssessmentPro Institute">
+                <input type="text" class="form-control" id="setting-name" value="AdmitPro Institute">
               </div>
               <div class="form-group">
                 <label class="form-label">Logo Abbreviation <span class="text-muted">(shown when no logo)</span></label>
@@ -1674,7 +1674,7 @@ select.form-control{appearance:none;background-image:url("data:image/svg+xml,%3C
   <div class="topbar">
     <div class="topbar-logo">
       <div class="logo-badge" id="instr-logo">AP</div>
-      <div><div class="logo-text" id="instr-institute">AssessmentPro Institute</div><div class="logo-sub">Examination Portal</div></div>
+      <div><div class="logo-text" id="instr-institute">AdmitPro Institute</div><div class="logo-sub">Examination Portal</div></div>
     </div>
     <button class="btn btn-ghost btn-sm" style="color:rgba(255,255,255,.75)" onclick="showScreen('screen-landing')">⬅ Logout</button>
   </div>
@@ -1797,9 +1797,10 @@ select.form-control{appearance:none;background-image:url("data:image/svg+xml,%3C
       </div>
       <div class="card-body" id="result-review"></div>
     </div>
-    <div class="flex gap-2 justify-center">
+    <div class="flex gap-2 justify-center flex-wrap">
+      <button class="btn btn-outline" onclick="document.getElementById('result-review').scrollIntoView({behavior:'smooth',block:'start'})">📄 View Detailed Answer Sheet</button>
       <button class="btn btn-outline" onclick="window.print()">🖨 Print Scorecard</button>
-      <button class="btn btn-primary" onclick="showScreen('screen-landing')">Return to Portal</button>
+      <button class="btn btn-primary" onclick="showScreen(App.isLinkMode?'screen-thankyou':'screen-landing')">Return to Portal</button>
     </div>
   </div>
 </div>
@@ -1816,7 +1817,7 @@ select.form-control{appearance:none;background-image:url("data:image/svg+xml,%3C
 // ═══════════════════════════════════════════════════════════════
 const Store = {
   settings: {
-    instituteName: 'AssessmentPro Institute', logoText: 'AP', tagline: 'Online Admission Test Portal',
+    instituteName: 'AdmitPro Institute', logoText: 'AP', tagline: 'Online Admission Test Portal',
     theme: '', tabSwitch: true, rightClick: true, copyBlock: false, fullscreen: false,
     maxTabSwitches: 3, showCalc: false, allowReview: true, defMarks: 4, defNeg: 0,
     resultsVisible: true,
@@ -1833,14 +1834,14 @@ const Store = {
   candidates: [],
   results: [],
   _init() {
-    const saved = localStorage.getItem('AssessmentPro_data');
+    const saved = localStorage.getItem('admitpro_data');
     if(saved) { try { Object.assign(this, JSON.parse(saved)); } catch(e) {} }
     else { this._seed(); }
     // Always ensure at least one demo candidate exists for login testing
     // (called after load so it also runs after Firebase sync)
   },
   save() {
-    try { localStorage.setItem('AssessmentPro_data', JSON.stringify({
+    try { localStorage.setItem('admitpro_data', JSON.stringify({
       settings:this.settings, questions:this.questions, tests:this.tests,
       candidates:this.candidates, results:this.results
     })); } catch(e) {}
@@ -2002,7 +2003,7 @@ async function _verifyPwd(plain, stored){
 }
 // Lockout: 5 failed attempts → 15 min cooldown, per identifier (admin email or candidate roll)
 const _LOCK_MAX = 5, _LOCK_MS = 15*60*1000;
-function _lockKey(id){ return 'AssessmentPro_lock_' + (id||'').toLowerCase(); }
+function _lockKey(id){ return 'admitpro_lock_' + (id||'').toLowerCase(); }
 function _checkLock(id){
   try{
     const raw = localStorage.getItem(_lockKey(id)); if(!raw) return null;
@@ -2025,14 +2026,14 @@ function _clearFails(id){ try{ localStorage.removeItem(_lockKey(id)); }catch(e){
 // Audit log
 function auditLog(actor, action, meta){
   try{
-    const k = 'AssessmentPro_audit';
+    const k = 'admitpro_audit';
     const arr = JSON.parse(localStorage.getItem(k)||'[]');
     arr.push({ts:new Date().toISOString(), actor, action, meta:meta||{}});
     if(arr.length>500) arr.splice(0, arr.length-500);
     localStorage.setItem(k, JSON.stringify(arr));
   }catch(e){}
 }
-function getAuditLog(){ try{ return JSON.parse(localStorage.getItem('AssessmentPro_audit')||'[]'); }catch(e){return [];} }
+function getAuditLog(){ try{ return JSON.parse(localStorage.getItem('admitpro_audit')||'[]'); }catch(e){return [];} }
 function downloadAuditLog(){
   const arr = getAuditLog();
   if(!arr.length){ toast('Audit log is empty.','info'); return; }
@@ -2048,10 +2049,10 @@ function _newSessionToken(){
   const a = new Uint8Array(16); crypto.getRandomValues(a);
   return Array.from(a).map(b=>b.toString(16).padStart(2,'0')).join('');
 }
-function _localSessionKey(cid){ return 'AssessmentPro_sess_'+cid; }
+function _localSessionKey(cid){ return 'admitpro_sess_'+cid; }
 function _hasSavedCloudConfig(){
   try {
-    const raw = localStorage.getItem('AssessmentPro_fb_config');
+    const raw = localStorage.getItem('admitpro_fb_config');
     if(!raw) return false;
     const cfg = JSON.parse(raw);
     return !!(cfg && cfg.projectId && cfg.apiKey);
@@ -3192,8 +3193,8 @@ function openTestModal(id=null) {
   document.getElementById('t-sectional-timing').checked = (t && t.sectionalTiming)||false;
   // Sections
   document.getElementById('t-sections-list').innerHTML = '';
-  const secs = (t && t.sections) || [{name:'Section 1',time:60}];
-  secs.forEach(s => addSectionEditor(s.name, s.time));
+  const secs = (t && t.sections) || [{name:'Section 1',time:60,mandatory:false}];
+  secs.forEach(s => addSectionEditor(s.name, s.time, !!s.mandatory));
   // reset picker filters
   ['t-q-search','t-q-filter-tag'].forEach(id=>{const el=document.getElementById(id); if(el) el.value='';});
   const ss=document.getElementById('t-q-filter-section'); if(ss){ ss.innerHTML='<option value="">All sections</option>'; }
@@ -3201,11 +3202,12 @@ function openTestModal(id=null) {
   renderTestQuestionPicker((t && t.questions) || []);
   openModal('modal-test');
 }
-function addSectionEditor(name='',time=60) {
+function addSectionEditor(name='',time=60,mandatory=false) {
   const div = document.createElement('div');
   div.className = 'flex gap-1 mb-1 items-center';
   div.innerHTML = `<input type="text" class="form-control t-sec-name" placeholder="Section name" value="${name}" style="flex:1" oninput="_refreshTestSectionFilter()">
     <input type="number" class="form-control t-sec-time" placeholder="Min" value="${time}" style="width:80px" title="Duration in minutes">
+    <label class="checkbox-label" style="white-space:nowrap;font-size:.8rem" title="Candidates must complete this section before accessing later sections"><input type="checkbox" class="t-sec-mandatory" ${mandatory?'checked':''}> Mandatory</label>
     <button class="btn btn-ghost btn-icon btn-sm" onclick="this.parentElement.remove();_refreshTestSectionFilter()">✕</button>`;
   document.getElementById('t-sections-list').appendChild(div);
   _refreshTestSectionFilter();
@@ -3329,7 +3331,8 @@ function saveTest(keepOpen) {
   document.querySelectorAll('#t-sections-list > div').forEach(row => {
     const n = row.querySelector('.t-sec-name')?.value.trim();
     const tm = +row.querySelector('.t-sec-time')?.value||60;
-    if(n) sections.push({name:n,time:tm});
+    const mand = !!row.querySelector('.t-sec-mandatory')?.checked;
+    if(n) sections.push({name:n,time:tm,mandatory:mand});
   });
   if(!sections.length) { toast('Add at least one section.','danger'); return; }
 
@@ -3986,7 +3989,7 @@ function startTest() {
   // Restore in-progress state if same user/test was interrupted
   let restored = null;
   try {
-    const raw = localStorage.getItem('AssessmentPro_test_progress');
+    const raw = localStorage.getItem('admitpro_test_progress');
     if(raw) {
       const p = JSON.parse(raw);
       if(p && p.testId===test.id && p.candidateId===(App.currentUser&&App.currentUser.id)) restored = p;
@@ -4024,14 +4027,14 @@ function saveTestProgress(){
   try {
     if(!App.testState || !App.currentTest) return;
     const {questions, timer, ...rest} = App.testState; // strip non-serialisable
-    localStorage.setItem('AssessmentPro_test_progress', JSON.stringify({
+    localStorage.setItem('admitpro_test_progress', JSON.stringify({
       testId: App.currentTest.id,
       candidateId: App.currentUser && App.currentUser.id,
       state: rest, savedAt: Date.now()
     }));
   } catch(e){}
 }
-function clearTestProgress(){ try { localStorage.removeItem('AssessmentPro_test_progress'); } catch(e){} }
+function clearTestProgress(){ try { localStorage.removeItem('admitpro_test_progress'); } catch(e){} }
 
 function renderTestScreen() {
   const test = App.currentTest;
@@ -4045,7 +4048,29 @@ function renderTestScreen() {
   renderQNavGrid();
 }
 
+function _isSectionComplete(idx){
+  const ts = App.testState;
+  const secName = App.currentTest && App.currentTest.sections[idx]?.name;
+  if(!secName) return true;
+  const qs = ts.questions.map((q,i)=>({q,i})).filter(({q})=>q.section===secName);
+  if(!qs.length) return true;
+  return qs.every(({i})=>{
+    const a = ts.answers[i];
+    return a!==undefined && a!==null && a!=='' && !(Array.isArray(a)&&!a.length);
+  });
+}
+function _canEnterSection(targetIdx){
+  const sections = (App.currentTest && App.currentTest.sections) || [];
+  for(let i=0; i<targetIdx; i++){
+    if(sections[i] && sections[i].mandatory && !_isSectionComplete(i)){
+      toast(`Please complete the mandatory section "${sections[i].name}" before moving on.`, 'warning', 3500);
+      return false;
+    }
+  }
+  return true;
+}
 function switchTestSection(idx, el) {
+  if(idx !== App.testState.sectionIdx && !_canEnterSection(idx)) return;
   App.testState.sectionIdx = idx;
   document.querySelectorAll('#test-section-tabs .tab-btn').forEach((b,i)=>b.classList.toggle('active',i===idx));
   // Jump to first question of this section
@@ -4110,13 +4135,30 @@ function renderQuestion() {
       ${optionsHTML}
     </div>`;
 
-  // Nav buttons
-  document.getElementById('btn-prev').disabled = ts.currentIndex === 0;
-  const isLast = ts.currentIndex === ts.questions.length-1;
+  // Section-aware nav
+  const _secName = App.currentTest && App.currentTest.sections[ts.sectionIdx]?.name || '';
+  const _secIdxs = ts.questions.map((q,i)=>({q,i})).filter(({q})=>!_secName||q.section===_secName).map(x=>x.i);
+  const _pos = _secIdxs.indexOf(ts.currentIndex);
+  const _isFirstInSec = _pos <= 0;
+  const _isLastInSec = _pos === _secIdxs.length - 1;
+  const _isLastSection = ts.sectionIdx === ((App.currentTest.sections||[]).length - 1);
+  document.getElementById('btn-prev').disabled = _isFirstInSec;
   const btnNext = document.getElementById('btn-next');
   btnNext.disabled = false;
-  btnNext.textContent = isLast ? 'Finish →' : 'Next →';
-  btnNext.onclick = isLast ? (()=>showSubmitModal()) : (()=>navigateQuestion(1));
+  if(_isLastInSec && !_isLastSection){
+    btnNext.textContent = 'Next Segment →';
+    btnNext.onclick = () => {
+      if(_canEnterSection(ts.sectionIdx + 1)){
+        switchTestSection(ts.sectionIdx + 1);
+      }
+    };
+  } else if(_isLastInSec && _isLastSection){
+    btnNext.textContent = 'Finish →';
+    btnNext.onclick = () => showSubmitModal();
+  } else {
+    btnNext.textContent = 'Next →';
+    btnNext.onclick = () => navigateQuestion(1);
+  }
   updateProgress();
 }
 
@@ -4149,10 +4191,13 @@ function flagQuestion() {
 }
 function navigateQuestion(dir) {
   const ts = App.testState;
-  const newIdx = ts.currentIndex + dir;
-  if(newIdx<0||newIdx>=ts.questions.length) return;
-  ts.currentIndex = newIdx;
-  ts.visited[newIdx] = true;
+  const secName = App.currentTest && App.currentTest.sections[ts.sectionIdx]?.name || '';
+  const idxs = ts.questions.map((q,i)=>({q,i})).filter(({q})=>!secName||q.section===secName).map(x=>x.i);
+  const pos = idxs.indexOf(ts.currentIndex);
+  const newPos = pos + dir;
+  if(newPos<0 || newPos>=idxs.length) return;
+  ts.currentIndex = idxs[newPos];
+  ts.visited[ts.currentIndex] = true;
   renderQuestion(); renderQNavGrid();
 }
 
@@ -4255,10 +4300,13 @@ function finalSubmitTest() {
   Store.save();
   clearTestProgress();
   if(App.currentTest.showResult && Store.settings.resultsVisible && !hasSubjective) {
+    // Publish-immediately → result dashboard (no auto logout)
     showResultScreen(result);
   } else {
-    toast('Test submitted! Your result will be released by the administrator.','success');
-    setTimeout(()=>showScreen(App.isLinkMode?'screen-thankyou':'screen-landing'),1500);
+    // Results not published yet → Thank You page (no auto logout)
+    showScreen('screen-thankyou');
+    const tyMsg = document.getElementById('ty-msg');
+    if(tyMsg) tyMsg.textContent = 'Thank you! Your test has been submitted successfully. Your result will be available later once the administrator publishes it.';
   }
 }
 
@@ -4549,7 +4597,7 @@ const FB = {
         throw new Error('Invalid API key. Check your Firebase API key.');
       }
 
-      localStorage.setItem('AssessmentPro_fb_config', JSON.stringify(config));
+      localStorage.setItem('admitpro_fb_config', JSON.stringify(config));
       this._setStatus('connected', 'Connected · ' + config.projectId);
       this._updateSettingsUI(true, config.projectId);
       await this.pullAll();
@@ -4575,14 +4623,14 @@ const FB = {
   disconnect() {
     this._stopPolling();
     this.cfg = null;
-    localStorage.removeItem('AssessmentPro_fb_config');
+    localStorage.removeItem('admitpro_fb_config');
     this._setStatus('off', 'Firebase disconnected — local mode');
     this._updateSettingsUI(false);
     toast('Firebase disconnected. Running in local mode.', 'info');
   },
 
   // ── CRUD via REST (with offline outbox) ───────────────────
-  _outboxKey: 'AssessmentPro_fb_outbox',
+  _outboxKey: 'admitpro_fb_outbox',
   _readOutbox(){ try { return JSON.parse(localStorage.getItem(this._outboxKey)||'[]'); } catch(e){ return []; } },
   _writeOutbox(arr){ try { localStorage.setItem(this._outboxKey, JSON.stringify(arr)); } catch(e){} },
   _enqueue(op){
@@ -4673,13 +4721,13 @@ const FB = {
       var fbSettings   = results[4];
 
       var fbIsEmpty = fbQuestions.length === 0 && fbTests.length === 0 && fbCandidates.length === 0;
-      var alreadySeeded = localStorage.getItem('AssessmentPro_fb_seeded_' + this.cfg.projectId);
+      var alreadySeeded = localStorage.getItem('admitpro_fb_seeded_' + this.cfg.projectId);
 
       if(fbIsEmpty && !alreadySeeded) {
         // ── FIRST RUN: Firebase is empty — auto-push all local data ──
         this._setStatus('syncing', 'First run — uploading data to Firebase…');
         await this.pushLocalData(true); // true = silent (no toast)
-        localStorage.setItem('AssessmentPro_fb_seeded_' + this.cfg.projectId, '1');
+        localStorage.setItem('admitpro_fb_seeded_' + this.cfg.projectId, '1');
         this._setStatus('connected', 'Auto-seeded · ' + this.cfg.projectId);
         toast('✅ Connected! All data auto-uploaded to Firebase.', 'success', 4000);
       } else {
@@ -4889,7 +4937,7 @@ function _preferredFirebaseConfig(saved) {
 
 function openFirebaseModal() {
   var saved = {};
-  try { saved = JSON.parse(localStorage.getItem('AssessmentPro_fb_config') || '{}'); } catch(e){}
+  try { saved = JSON.parse(localStorage.getItem('admitpro_fb_config') || '{}'); } catch(e){}
   saved = _preferredFirebaseConfig(saved);
   var set = function(id, val){ var el=document.getElementById(id); if(el) el.value=val||''; };
   set('fb-apiKey',     saved.apiKey    || DEFAULT_CONFIG.apiKey);
@@ -4913,7 +4961,7 @@ function _isLocalFile() {
 async function tryAutoConnect() {
   // Always try to auto-connect using saved or default config — silent on failure.
   var saved = null;
-  try { saved = JSON.parse(localStorage.getItem('AssessmentPro_fb_config')); } catch(e){}
+  try { saved = JSON.parse(localStorage.getItem('admitpro_fb_config')); } catch(e){}
   var cfg = _preferredFirebaseConfig(saved);
   if(_isLocalFile()) {
     // file:// can't reach Firebase — show banner only if there's local data to sync
